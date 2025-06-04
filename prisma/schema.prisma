@@ -1,91 +1,82 @@
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
 }
 
+datasource db {
+  provider = "postgresql" // o "mysql" o "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  name           String?
+  hashedPassword String
+  role           String?   @default("USER")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  
+  // Relaciones
+  tickets        Ticket[]
+  accounts       Account[]
+  sessions       Session[]
+  
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verificationtokens")
+}
+
 model Ticket {
-  id          Int          @id @default(autoincrement())
+  id          String   @id @default(cuid())
   title       String
   description String?
-  status      TicketStatus @default(OPEN)
-  extra       Json? 
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  citas       Cita[]
-  ownerId   Int?
-  owner     User?     @relation("UserTickets", fields: [ownerId], references: [id])
-}
-
-enum TicketStatus {
-  OPEN
-  IN_PROGRESS
-  CLOSED
-}
-
-model Licitacion {
-  id               Int                @id @default(autoincrement())
-  codigo           String             @unique
-  nombre           String
-  institucion      String
-  fechaPublicacion DateTime
-  fechaCierre      DateTime
-  montoEstimado    Float
-  estado           LicitacionEstado   @default(ABIERTA)
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  citas            Cita[]
-  ownerId   Int?
-  owner     User?     @relation("UserLicitaciones", fields: [ownerId], references: [id])
-}
-
-enum LicitacionEstado {
-  ABIERTA
-  PRESENTADA
-  ADJUDICADA
-  DESCARTADA
-  VENCIDA
-}
-
-model Cita {
-  id           Int         @id @default(autoincrement())
-  titulo       String
-  fechaHora    DateTime
-  responsable  String
-  ticketId     Int?
-  licitacionId Int?
-  ticket       Ticket?     @relation(fields: [ticketId], references: [id])
-  licitacion   Licitacion? @relation(fields: [licitacionId], references: [id])
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  ownerId   Int?
-  owner     User?     @relation("UserCitas", fields: [ownerId], references: [id])
-}
-model User {
-  id            Int       @id @default(autoincrement())
-  email         String    @unique
-  name          String?
-  hashedPassword String
-  role          UserRole  @default(USER)
-
-  // Relaciones
-  tickets       Ticket[]  @relation("UserTickets")
-  licitaciones  Licitacion[] @relation("UserLicitaciones")
-  citas         Cita[]    @relation("UserCitas")
-
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-}
-
-enum UserRole {
-  ADMIN
-  USER
-}
-model Setting {
-  id     Int    @id @default(autoincrement())
-  key    String @unique
-  value  String
+  priority    String   @default("MEDIA")
+  status      String   @default("ABIERTO")
+  ownerId     String   @map("owner_id")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  owner       User     @relation(fields: [ownerId], references: [id])
+  
+  @@map("tickets")
 }

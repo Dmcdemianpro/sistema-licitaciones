@@ -4,11 +4,7 @@ import "./globals.css";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Toaster } from "@/components/ui/toaster";
-//import { auth } from "@/lib/auth"; // <--- CORREGIDO
-import { auth } from "next-auth";
-
-
-
+import { auth } from "@/lib/auth";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -22,7 +18,7 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth(); // OJO: debe existir una función auth() en lib/auth.ts, o puedes quitarlo si no usas session aquí
+  const session = await auth();
 
   return (
     <html lang="es">
