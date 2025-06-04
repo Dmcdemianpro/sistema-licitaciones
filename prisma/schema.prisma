@@ -1,0 +1,91 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Ticket {
+  id          Int          @id @default(autoincrement())
+  title       String
+  description String?
+  status      TicketStatus @default(OPEN)
+  extra       Json? 
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  citas       Cita[]
+  ownerId   Int?
+  owner     User?     @relation("UserTickets", fields: [ownerId], references: [id])
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  CLOSED
+}
+
+model Licitacion {
+  id               Int                @id @default(autoincrement())
+  codigo           String             @unique
+  nombre           String
+  institucion      String
+  fechaPublicacion DateTime
+  fechaCierre      DateTime
+  montoEstimado    Float
+  estado           LicitacionEstado   @default(ABIERTA)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  citas            Cita[]
+  ownerId   Int?
+  owner     User?     @relation("UserLicitaciones", fields: [ownerId], references: [id])
+}
+
+enum LicitacionEstado {
+  ABIERTA
+  PRESENTADA
+  ADJUDICADA
+  DESCARTADA
+  VENCIDA
+}
+
+model Cita {
+  id           Int         @id @default(autoincrement())
+  titulo       String
+  fechaHora    DateTime
+  responsable  String
+  ticketId     Int?
+  licitacionId Int?
+  ticket       Ticket?     @relation(fields: [ticketId], references: [id])
+  licitacion   Licitacion? @relation(fields: [licitacionId], references: [id])
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  ownerId   Int?
+  owner     User?     @relation("UserCitas", fields: [ownerId], references: [id])
+}
+model User {
+  id            Int       @id @default(autoincrement())
+  email         String    @unique
+  name          String?
+  hashedPassword String
+  role          UserRole  @default(USER)
+
+  // Relaciones
+  tickets       Ticket[]  @relation("UserTickets")
+  licitaciones  Licitacion[] @relation("UserLicitaciones")
+  citas         Cita[]    @relation("UserCitas")
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+model Setting {
+  id     Int    @id @default(autoincrement())
+  key    String @unique
+  value  String
+}
